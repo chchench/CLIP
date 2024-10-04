@@ -157,23 +157,45 @@ class ModifiedResNet(nn.Module):
 class UNet(nn.Module):
     def __init__(self, n_channels, n_classes):
         super(UNet, self).__init__()
+
+        # Encoder path level 1 (first encoder block) - Reduce spatial dimensions while retaining important features
         self.enc_conv1 = self.double_conv(n_channels, 64)
         self.pool1 = nn.MaxPool2d(2)
+
+        # Encoder path level 2 (second encoder block) - Reduce spatial dimensions further
         self.enc_conv2 = self.double_conv(64, 128)
         self.pool2 = nn.MaxPool2d(2)
+
+        # Encoder path level 3 (third encoder block) - Continue to reduce spatial dimensions
         self.enc_conv3 = self.double_conv(128, 256)
         self.pool3 = nn.MaxPool2d(2)
+
+        # Encoder path level 4 (fourth encoder block) - Further reduction in spatial dimensions
         self.enc_conv4 = self.double_conv(256, 512)
         self.pool4 = nn.MaxPool2d(2)
+
+        # Bottleneck - Capture the most abstract features with the smallest spatial dimensions
         self.bottleneck = self.double_conv(512, 1024)
+
+        # Expanding (decoder) path responsible for upsampling and feature reconstruction
+        # Decoder path level 4 (first decoder block)
         self.upconv4 = nn.ConvTranspose2d(1024, 512, kernel_size=2, stride=2)
         self.dec_conv4 = self.double_conv(1024, 512)
+
+        # Decoder path level 3 (second decoder block)
         self.upconv3 = nn.ConvTranspose2d(512, 256, kernel_size=2, stride=2)
         self.dec_conv3 = self.double_conv(512, 256)
+
+        # Decoder path level 2 (third decoder block)
         self.upconv2 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
         self.dec_conv2 = self.double_conv(256, 128)
+
+        # Decoder path level 1 (fourth decoder block)
         self.upconv1 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
         self.dec_conv1 = self.double_conv(128, 64)
+
+        # Output Shape: Matches the spatial dimensions of the input image 
+        # (after accounting for any reductions due to ‘valid’ padding).
         self.out_conv = nn.Conv2d(64, n_classes, kernel_size=1)
 
     def double_conv(self, in_channels, out_channels):
